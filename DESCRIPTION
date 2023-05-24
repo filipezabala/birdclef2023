@@ -1,0 +1,19 @@
+Package: birdclef2023
+Type: Package
+Title: Summarized data from Kaggle's BirdCLEF2023 competition audios.
+Version: 0.0.9001
+Date: 2023-05-24
+Authors@R: person("Zabala", "Filipe J.", email = "filipezabala@gmail.com", role = c("cre","aut"))
+Maintainer: Zabala Filipe J. <filipezabala@gmail.com>
+URL: https://github.com/filipezabala/birdclef2023
+BugReports: https://github.com/filipezabala/birdclef2023/issues
+Description: Summarized data from Kaggle's BirdCLEF2023 competition audios.
+Depends: R (>= 4.0.0)
+Imports: dplyr
+Suggests: voice
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
+VignetteBuilder: knitr
+Language: en-US
