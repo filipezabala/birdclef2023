@@ -22,8 +22,7 @@ This is a vignette presenting the [`voice`](https://cran.r-project.org/package=v
 ## 1. Libraries and functions
 
 ### 1.1 Installing
-First of all, `voice` and `birdclef2023` packages are installed.
-[`voice`](https://github.com/filipezabala/voice) contains functions to deal with audio, and [`birdclef2023`](https://github.com/filipezabala/birdclef2023) contains summarized data from Kaggle's BirdCLEF2023 competition audios.
+[`birdclef2023`](https://github.com/filipezabala/birdclef2023) contains summarized data from [Kaggle BirdCLEF 2023](https://www.kaggle.com/competitions/birdclef-2023/) competition audios. The summarization was made using [`voice`](https://github.com/filipezabala/voice), an R library with functions to easily deal with audio.
 
 ```{r, eval=FALSE}
 # install packs
@@ -50,7 +49,7 @@ gaussian <- function(x, mu = 0, sigma = 1){
 ```
 
 ## 2. Data
-In this section is presented how to download, extract and summarize the bird's audio features, and be ommited in a first reading.
+In this section is presented how to download, extract and summarize the bird's audio features. As the results are available at [`birdclef2023`](https://github.com/filipezabala/birdclef2023), it may be ommited in a first reading.
 
 ### 2.1 Downloading
 The data may be downloaded by the [official Kaggle API]( https://github.com/Kaggle/kaggle-api). The zip file occupies around 5.3GB on disk. 
@@ -75,7 +74,7 @@ unzip('~/Downloads/birdclef-2023.zip',
       unzip = '/usr/bin/unzip')
 ```
 
-### 2.3 Train data
+### 2.3 Train
 The .ogg files are converted using [`ffmpeg`](https://ffmpeg.org/), "[a] complete, cross-platform solution to record, convert and stream audio and video". The tagging procedure was performed by `voice::tag` using parallel processing. In order to save memory, the ogg to wav conversion, tagging and the wav files deletion are executed in the same routine. The processing took around 6 hours on a local machine with 12 CPUs, and the output is available in `birdclef2023::Esc`.
 
 ```{r, eval=FALSE}
@@ -104,8 +103,6 @@ E_list <- vector('list', n)
 names(E_list) <- basename(oggDirs)
 
 # converting ogg to wav, tagging grouping by wav_path, deleting wav
-ini <- Sys.time()
-
 for(i in 1:n){
   # garbage collector
   gc()
@@ -144,10 +141,9 @@ for(i in 1:n){
   # progress
   print(i/n)
 }
-Sys.time()-ini
 ```
 
-### 2.4 Test data
+### 2.4 Test
 
 Converting the test file from ogg to wav format.
 ```{r, eval=FALSE}
@@ -232,17 +228,15 @@ The basic idea is to compare each row from `Ets` (test sample) with each row fro
 AL=\sqrt{\frac{\sum_{i=1}^{n-n_{NA}} (x_i-y_i)^2}{n-n_{NA}}}
 \end{equation} 
 
-
 ```{r}
 # distances
-D <- matrix(NA, 
-            nrow = nrow(birdclef2023::Ets), 
+D <- matrix(NA, nrow = nrow(birdclef2023::Ets), 
             ncol = nrow(birdclef2023::Esc))
 rownames(D) <- birdclef2023::Ets$row_id
 colnames(D) <- birdclef2023::Esc$species_code
 ```
 
-The following code is completly not optimized, designed to be intuitive and run below the 2 hours limit defined in the Kaggle BirdCLEF2023 competition rules. Takes around 30 minutes to run on a local machine.
+The following code is completly not optimized, designed to be intuitive and run below the 2 hours limit defined in the Kaggle BirdCLEF2023 competition rules. Takes around 30 minutes to run on a local machine, and the output is available in `birdclef2023::D`.
 
 ```{r, eval=FALSE}
 # calculating distances
@@ -264,7 +258,6 @@ for(i in 1:nrow(birdclef2023::Ets)){
 save(D, file = './data/D.rda', compress = 'xz')
 ```
 
-
 The probabilities are calculated considering the Gaussian function given by
 \begin{equation}
 g(x)=e^{-\left(\frac{x-\mu}{\sigma}\right)^2}
@@ -273,13 +266,15 @@ $x$ represents the scaled distances, and the parameters used were $\mu=0$ and $\
 
 ```{r}
 # probabilities matrix
-P <- matrix(NA, nrow = nrow(Ets), ncol = nrow(Esc))
-rownames(P) <- Ets$row_id
-colnames(P) <- Esc$species_code
+P <- matrix(NA, nrow = nrow(birdclef2023::Ets), 
+            ncol = nrow(birdclef2023::Esc))
+rownames(P) <- birdclef2023::Ets$row_id
+colnames(P) <- birdclef2023::Esc$species_code
 
 # calculating probabilities
 for(i in 1:nrow(P)){
-  nm <- gaussian(scale(D[i,]), mu = 0, sigma = 0.001)
+  nm <- gaussian(scale(birdclef2023::D[i,]), 
+                 mu = 0, sigma = 0.001)
   P[i,] <- nm/sum(nm)
 }
 ```
@@ -289,7 +284,9 @@ After that, there is some cleaning and tidying up.
 ```{r}
 block <- strsplit(rownames(P), '_')
 block <- as.numeric(sapply(block, geti, 3))
-submission <- tibble(block = block, row_id = rownames(P), as_tibble(P))
+submission <- tibble(block = block, 
+                     row_id = rownames(P), 
+                     as_tibble(P))
 
 submission <- submission %>% 
   arrange(block) %>% 

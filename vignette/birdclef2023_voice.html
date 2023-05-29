@@ -339,7 +339,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">BirdCLEF 2023 via <code>voice</code></h1>
 <h4 class="author">Filipe J. Zabala</h4>
-<h4 class="date">2023-05-29 10:33:36</h4>
+<h4 class="date">2023-05-29 15:16:52</h4>
 
 
 <div id="TOC">
@@ -354,8 +354,8 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <ul>
 <li><a href="#downloading" id="toc-downloading">2.1 Downloading</a></li>
 <li><a href="#extracting" id="toc-extracting">2.2 Extracting</a></li>
-<li><a href="#train-data" id="toc-train-data">2.3 Train data</a></li>
-<li><a href="#test-data" id="toc-test-data">2.4 Test data</a></li>
+<li><a href="#train" id="toc-train">2.3 Train</a></li>
+<li><a href="#test" id="toc-test">2.4 Test</a></li>
 </ul></li>
 <li><a href="#modelling" id="toc-modelling">3. Modelling</a>
 <ul>
@@ -375,11 +375,11 @@ BirdCLEF 2023</a> competition.</p>
 <h2>1. Libraries and functions</h2>
 <div id="installing" class="section level3">
 <h3>1.1 Installing</h3>
-<p>First of all, <code>voice</code> and <code>birdclef2023</code>
-packages are installed. <a href="https://github.com/filipezabala/voice"><code>voice</code></a>
-contains functions to deal with audio, and <a href="https://github.com/filipezabala/birdclef2023"><code>birdclef2023</code></a>
-contains summarized data from Kaggle’s BirdCLEF2023 competition
-audios.</p>
+<p><a href="https://github.com/filipezabala/birdclef2023"><code>birdclef2023</code></a>
+contains summarized data from <a href="https://www.kaggle.com/competitions/birdclef-2023/">Kaggle
+BirdCLEF 2023</a> competition audios. The summarization was made using
+<a href="https://github.com/filipezabala/voice"><code>voice</code></a>,
+an R library with functions to easily deal with audio.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># install packs</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&#39;voice&#39;</span>, <span class="at">dep =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&#39;filipezabala/birdclef2023&#39;</span>)</span></code></pre></div>
@@ -405,7 +405,8 @@ functions are defined.</p>
 <div id="data" class="section level2">
 <h2>2. Data</h2>
 <p>In this section is presented how to download, extract and summarize
-the bird’s audio features, and be ommited in a first reading.</p>
+the bird’s audio features. As the results are available at <a href="https://github.com/filipezabala/birdclef2023"><code>birdclef2023</code></a>,
+it may be ommited in a first reading.</p>
 <div id="downloading" class="section level3">
 <h3>2.1 Downloading</h3>
 <p>The data may be downloaded by the <a href="https://github.com/Kaggle/kaggle-api">official Kaggle API</a>. The
@@ -432,8 +433,8 @@ zip file occupies around 5.3GB on disk.</p>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>      <span class="at">exdir =</span> <span class="fu">tempdir</span>(),</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>      <span class="at">unzip =</span> <span class="st">&#39;/usr/bin/unzip&#39;</span>)</span></code></pre></div>
 </div>
-<div id="train-data" class="section level3">
-<h3>2.3 Train data</h3>
+<div id="train" class="section level3">
+<h3>2.3 Train</h3>
 <p>The .ogg files are converted using <a href="https://ffmpeg.org/"><code>ffmpeg</code></a>, “[a] complete,
 cross-platform solution to record, convert and stream audio and video”.
 The tagging procedure was performed by <code>voice::tag</code> using
@@ -466,50 +467,47 @@ output is available in <code>birdclef2023::Esc</code>.</p>
 <span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(E_list) <span class="ot">&lt;-</span> <span class="fu">basename</span>(oggDirs)</span>
 <span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="co"># converting ogg to wav, tagging grouping by wav_path, deleting wav</span></span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>ini <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n){</span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>  <span class="co"># garbage collector</span></span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gc</span>()</span>
-<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>  <span class="co"># creating directories</span></span>
-<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">dir.create</span>((wavDirs[i]), <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>  <span class="co"># filtering by species_code</span></span>
-<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>  oggTemp <span class="ot">&lt;-</span> <span class="fu">dir</span>(oggDirs[i], <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>  fltr <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="fu">basename</span>(oggDirs[i]), wavFiles)</span>
-<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>  wavTemp <span class="ot">&lt;-</span> wavFiles[fltr]</span>
-<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>  <span class="co"># converting ogg to wav</span></span>
-<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(oggTemp)){</span>
-<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>    cmd <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;ffmpeg -i &quot;</span>, oggTemp[j], <span class="st">&quot; -ac 1 &quot;</span>, wavTemp[j])</span>
-<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>    <span class="fu">system</span>(cmd)</span>
-<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Extended dataset</span></span>
-<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>  E <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">tibble</span>(<span class="at">species_code =</span> <span class="fu">basename</span>(oggDirs[i]),</span>
-<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>                     <span class="at">wav_path =</span> wavTemp)  </span>
-<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a>  <span class="co"># tagging</span></span>
-<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a>  E_list[[i]] <span class="ot">&lt;-</span> voice<span class="sc">::</span><span class="fu">tag</span>(E, <span class="at">groupBy =</span> <span class="st">&#39;species_code&#39;</span>,</span>
-<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a>                            <span class="at">features =</span> <span class="fu">c</span>(<span class="st">&#39;f0&#39;</span>, <span class="st">&#39;fmt&#39;</span>, <span class="st">&#39;rf&#39;</span>, <span class="st">&#39;rpf&#39;</span>, <span class="st">&#39;rcf&#39;</span>,</span>
-<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a>                                         <span class="st">&#39;mfcc&#39;</span>, <span class="st">&#39;zcr&#39;</span>, <span class="st">&#39;rms&#39;</span>, <span class="st">&#39;gain&#39;</span>, <span class="st">&#39;rfc&#39;</span>))</span>
-<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a>  <span class="co"># binding</span></span>
-<span id="cb6-56"><a href="#cb6-56" aria-hidden="true" tabindex="-1"></a>  E <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(E_list)</span>
-<span id="cb6-57"><a href="#cb6-57" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write.csv</span>(E, <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb6-58"><a href="#cb6-58" aria-hidden="true" tabindex="-1"></a>            <span class="at">file =</span> <span class="fu">gzfile</span>(<span class="fu">paste0</span>(<span class="fu">tempdir</span>(), <span class="st">&#39;/E_species_code.csv.gz&#39;</span>)))</span>
-<span id="cb6-59"><a href="#cb6-59" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-60"><a href="#cb6-60" aria-hidden="true" tabindex="-1"></a>  <span class="co"># deleting wav files</span></span>
-<span id="cb6-61"><a href="#cb6-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unlink</span>(wavDirs[i], <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb6-62"><a href="#cb6-62" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-63"><a href="#cb6-63" aria-hidden="true" tabindex="-1"></a>  <span class="co"># progress</span></span>
-<span id="cb6-64"><a href="#cb6-64" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(i<span class="sc">/</span>n)</span>
-<span id="cb6-65"><a href="#cb6-65" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb6-66"><a href="#cb6-66" aria-hidden="true" tabindex="-1"></a><span class="fu">Sys.time</span>()<span class="sc">-</span>ini</span></code></pre></div>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n){</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># garbage collector</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gc</span>()</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># creating directories</span></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">dir.create</span>((wavDirs[i]), <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>  <span class="co"># filtering by species_code</span></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>  oggTemp <span class="ot">&lt;-</span> <span class="fu">dir</span>(oggDirs[i], <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>  fltr <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="fu">basename</span>(oggDirs[i]), wavFiles)</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>  wavTemp <span class="ot">&lt;-</span> wavFiles[fltr]</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>  <span class="co"># converting ogg to wav</span></span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(oggTemp)){</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>    cmd <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;ffmpeg -i &quot;</span>, oggTemp[j], <span class="st">&quot; -ac 1 &quot;</span>, wavTemp[j])</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>    <span class="fu">system</span>(cmd)</span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Extended dataset</span></span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>  E <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">tibble</span>(<span class="at">species_code =</span> <span class="fu">basename</span>(oggDirs[i]),</span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>                     <span class="at">wav_path =</span> wavTemp)  </span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>  <span class="co"># tagging</span></span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>  E_list[[i]] <span class="ot">&lt;-</span> voice<span class="sc">::</span><span class="fu">tag</span>(E, <span class="at">groupBy =</span> <span class="st">&#39;species_code&#39;</span>,</span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a>                            <span class="at">features =</span> <span class="fu">c</span>(<span class="st">&#39;f0&#39;</span>, <span class="st">&#39;fmt&#39;</span>, <span class="st">&#39;rf&#39;</span>, <span class="st">&#39;rpf&#39;</span>, <span class="st">&#39;rcf&#39;</span>,</span>
+<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a>                                         <span class="st">&#39;mfcc&#39;</span>, <span class="st">&#39;zcr&#39;</span>, <span class="st">&#39;rms&#39;</span>, <span class="st">&#39;gain&#39;</span>, <span class="st">&#39;rfc&#39;</span>))</span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a>  <span class="co"># binding</span></span>
+<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a>  E <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(E_list)</span>
+<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write.csv</span>(E, <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb6-56"><a href="#cb6-56" aria-hidden="true" tabindex="-1"></a>            <span class="at">file =</span> <span class="fu">gzfile</span>(<span class="fu">paste0</span>(<span class="fu">tempdir</span>(), <span class="st">&#39;/E_species_code.csv.gz&#39;</span>)))</span>
+<span id="cb6-57"><a href="#cb6-57" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-58"><a href="#cb6-58" aria-hidden="true" tabindex="-1"></a>  <span class="co"># deleting wav files</span></span>
+<span id="cb6-59"><a href="#cb6-59" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unlink</span>(wavDirs[i], <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-60"><a href="#cb6-60" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-61"><a href="#cb6-61" aria-hidden="true" tabindex="-1"></a>  <span class="co"># progress</span></span>
+<span id="cb6-62"><a href="#cb6-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(i<span class="sc">/</span>n)</span>
+<span id="cb6-63"><a href="#cb6-63" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
-<div id="test-data" class="section level3">
-<h3>2.4 Test data</h3>
+<div id="test" class="section level3">
+<h3>2.4 Test</h3>
 <p>Converting the test file from ogg to wav format.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># converting test data</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>oggFile <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="fu">tempdir</span>(), <span class="st">&#39;/test_soundscapes/soundscape_29201.ogg&#39;</span>)</span>
@@ -630,55 +628,83 @@ taking the average of the valid values (not NA). We call
 AL=\sqrt{\frac{\sum_{i=1}^{n-n_{NA}} (x_i-y_i)^2}{n-n_{NA}}}
 \end{equation}\]</span></p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># distances</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>D <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> <span class="fu">nrow</span>(Ets), <span class="at">ncol =</span> <span class="fu">nrow</span>(Esc))</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(D) <span class="ot">&lt;-</span> Ets<span class="sc">$</span>row_id</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(D) <span class="ot">&lt;-</span> Esc<span class="sc">$</span>species_code</span></code></pre></div>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>D <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> <span class="fu">nrow</span>(birdclef2023<span class="sc">::</span>Ets), </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">ncol =</span> <span class="fu">nrow</span>(birdclef2023<span class="sc">::</span>Esc))</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(D) <span class="ot">&lt;-</span> birdclef2023<span class="sc">::</span>Ets<span class="sc">$</span>row_id</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(D) <span class="ot">&lt;-</span> birdclef2023<span class="sc">::</span>Esc<span class="sc">$</span>species_code</span></code></pre></div>
 <p>The following code is completly not optimized, designed to be
 intuitive and run below the 2 hours limit defined in the Kaggle
 BirdCLEF2023 competition rules. Takes around 30 minutes to run on a
-local machine.</p>
+local machine, and the output is available in
+<code>birdclef2023::D</code>.</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># calculating distances</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>ini <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>k <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(Ets)){</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(Esc)){</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    d2 <span class="ot">&lt;-</span> (Ets[i,<span class="sc">-</span><span class="dv">1</span>] <span class="sc">-</span> Esc[j,<span class="sc">-</span><span class="dv">1</span>])<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>k <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(birdclef2023<span class="sc">::</span>Ets)){</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(birdclef2023<span class="sc">::</span>Esc)){</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    k <span class="ot">&lt;-</span> k<span class="sc">+</span><span class="dv">1</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    d2 <span class="ot">&lt;-</span> (birdclef2023<span class="sc">::</span>Ets[i,<span class="sc">-</span><span class="dv">1</span>] <span class="sc">-</span> birdclef2023<span class="sc">::</span>Esc[j,<span class="sc">-</span><span class="dv">1</span>])<span class="sc">^</span><span class="dv">2</span></span>
 <span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">length</span>(d2)</span>
 <span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    nNA <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(d2))</span>
 <span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    D[i,j] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(d2, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)<span class="sc">/</span>(n<span class="sc">-</span>nNA))</span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="fu">Sys.time</span>()<span class="sc">-</span>ini</span></code></pre></div>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">print</span>(k<span class="sc">/</span>(<span class="fu">nrow</span>(birdclef2023<span class="sc">::</span>Ets)<span class="sc">*</span><span class="fu">nrow</span>(birdclef2023<span class="sc">::</span>Esc)))</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>The probabilities are calculated considering the Gaussian function
-given by <span class="math inline">\(g(x)=e^{-\left(\frac{x-\mu}{\sigma}\right)^2}\)</span>.
-<span class="math inline">\(x\)</span> represents the scaled distances,
-and the parameters used were <span class="math inline">\(\mu=0\)</span>
-and <span class="math inline">\(\sigma=0.001\)</span>. The idea is to
-give more weight to distance values very close to zero, and quickly
-reduce the weight to distances that move away from zero, reason why the
-standard deviation is small (adjusted to 0.001).</p>
+given by <span class="math display">\[\begin{equation}
+g(x)=e^{-\left(\frac{x-\mu}{\sigma}\right)^2}
+\end{equation}\]</span> <span class="math inline">\(x\)</span>
+represents the scaled distances, and the parameters used were <span class="math inline">\(\mu=0\)</span> and <span class="math inline">\(\sigma=0.001\)</span>. The idea is to give more
+weight to distance values very close to zero, and quickly reduce the
+weight to distances that move away from zero, reason why the standard
+deviation is small (adjusted to 0.001).</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># probabilities matrix</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>P <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> <span class="fu">nrow</span>(Ets), <span class="at">ncol =</span> <span class="fu">nrow</span>(Esc))</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(P) <span class="ot">&lt;-</span> Ets<span class="sc">$</span>row_id</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(P) <span class="ot">&lt;-</span> Esc<span class="sc">$</span>species_code</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co"># calculating probabilities</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(P)){</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  nm <span class="ot">&lt;-</span> <span class="fu">gaussian</span>(<span class="fu">scale</span>(D[i,]), <span class="at">mu =</span> <span class="dv">0</span>, <span class="at">sigma =</span> <span class="fl">0.001</span>)</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  P[i,] <span class="ot">&lt;-</span> nm<span class="sc">/</span><span class="fu">sum</span>(nm)</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>P <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> <span class="fu">nrow</span>(birdclef2023<span class="sc">::</span>Ets), </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">ncol =</span> <span class="fu">nrow</span>(birdclef2023<span class="sc">::</span>Esc))</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(P) <span class="ot">&lt;-</span> birdclef2023<span class="sc">::</span>Ets<span class="sc">$</span>row_id</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(P) <span class="ot">&lt;-</span> birdclef2023<span class="sc">::</span>Esc<span class="sc">$</span>species_code</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co"># calculating probabilities</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(P)){</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  nm <span class="ot">&lt;-</span> <span class="fu">gaussian</span>(<span class="fu">scale</span>(birdclef2023<span class="sc">::</span>D[i,]), </span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>                 <span class="at">mu =</span> <span class="dv">0</span>, <span class="at">sigma =</span> <span class="fl">0.001</span>)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  P[i,] <span class="ot">&lt;-</span> nm<span class="sc">/</span><span class="fu">sum</span>(nm)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>After that, there is some cleaning and tidying up.</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>block <span class="ot">&lt;-</span> <span class="fu">strsplit</span>(<span class="fu">rownames</span>(P), <span class="st">&#39;_&#39;</span>)</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>block <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">sapply</span>(block, geti, <span class="dv">3</span>))</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>submission <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">block =</span> block, <span class="at">row_id =</span> <span class="fu">rownames</span>(P), <span class="fu">as_tibble</span>(P))</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>submission <span class="ot">&lt;-</span> submission <span class="sc">%&gt;%</span> </span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(block) <span class="sc">%&gt;%</span> </span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>block)</span></code></pre></div>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>submission <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">block =</span> block, </span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>                     <span class="at">row_id =</span> <span class="fu">rownames</span>(P), </span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">as_tibble</span>(P))</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>submission <span class="ot">&lt;-</span> submission <span class="sc">%&gt;%</span> </span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(block) <span class="sc">%&gt;%</span> </span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>block)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>submission</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 120 × 265</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    row_id      abethr1 abhori1 abythr1 afbfly1 afdfly1 afecuc1   affeag1 afgfly1</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    &lt;chr&gt;         &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1 soundscape…       0       0       0       0       0       0 0               0</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  2 soundscape…       0       0       0       0       0       0 0               0</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3 soundscape…       0       0       0       0       0       0 0               0</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  4 soundscape…       0       0       0       0       0       0 2.96e-187       0</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  5 soundscape…       0       0       0       0       0       0 0               0</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  6 soundscape…       0       0       0       0       0       0 0               0</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  7 soundscape…       0       0       0       0       0       0 0               0</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  8 soundscape…       0       0       0       0       0       0 0               0</span></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  9 soundscape…       0       0       0       0       0       0 0               0</span></span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 10 soundscape…       0       0       0       0       0       0 0               0</span></span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # ℹ 110 more rows</span></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # ℹ 256 more variables: afghor1 &lt;dbl&gt;, afmdov1 &lt;dbl&gt;, afpfly1 &lt;dbl&gt;,</span></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; #   afpkin1 &lt;dbl&gt;, afpwag1 &lt;dbl&gt;, afrgos1 &lt;dbl&gt;, afrgrp1 &lt;dbl&gt;, afrjac1 &lt;dbl&gt;,</span></span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; #   afrthr1 &lt;dbl&gt;, amesun2 &lt;dbl&gt;, augbuz1 &lt;dbl&gt;, bagwea1 &lt;dbl&gt;, barswa &lt;dbl&gt;,</span></span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; #   bawhor2 &lt;dbl&gt;, bawman1 &lt;dbl&gt;, bcbeat1 &lt;dbl&gt;, beasun2 &lt;dbl&gt;, bkctch1 &lt;dbl&gt;,</span></span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; #   bkfruw1 &lt;dbl&gt;, blacra1 &lt;dbl&gt;, blacuc1 &lt;dbl&gt;, blakit1 &lt;dbl&gt;, blaplo1 &lt;dbl&gt;,</span></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; #   blbpuf2 &lt;dbl&gt;, blcapa2 &lt;dbl&gt;, blfbus1 &lt;dbl&gt;, blhgon1 &lt;dbl&gt;, …</span></span></code></pre></div>
 <p>Finally, the <code>submission.csv</code> file is written in the
 desired directory.</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(submission,</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">file =</span> <span class="st">&#39;/kaggle/working/submission.csv&#39;</span>)</span></code></pre></div>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">file =</span> <span class="fu">paste0</span>(<span class="fu">tempdir</span>(), <span class="st">&#39;/submission.csv&#39;</span>))</span></code></pre></div>
 </div>
 </div>
 
