@@ -1,0 +1,306 @@
+---
+title: 'BirdCLEF 2023 via `voice`'
+author: 'Filipe J. Zabala'
+date: "`r format(Sys.time(), '%Y-%m-%d %H:%M:%S')`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+ini0 <- Sys.time()
+```
+
+## 0. Context
+This is a vignette presenting the [`voice`](https://cran.r-project.org/package=voice) approach to [Kaggle BirdCLEF 2023](https://www.kaggle.com/competitions/birdclef-2023/) competition.
+
+
+## 1. Libraries and functions
+
+### 1.1 Installing
+First of all, `voice` and `birdclef2023` packages are installed.
+[`voice`](https://github.com/filipezabala/voice) contains functions to deal with audio, and [`birdclef2023`](https://github.com/filipezabala/birdclef2023) contains summarized data from Kaggle's BirdCLEF2023 competition audios.
+
+```{r, eval=FALSE}
+# install packs
+install.packages('voice', dep = TRUE)
+devtools::install_github('filipezabala/birdclef2023')
+```
+
+### 1.2 Calling
+The libraries are called, `geti` and `gaussian` functions are defined.
+
+```{r, message=FALSE, warning=FALSE}
+# packs
+library(voice)
+library(tidyverse)
+library(birdclef2023)
+
+# geti function
+geti <- function(x,i){x[i]}
+
+# gaussian function
+gaussian <- function(x, mu = 0, sigma = 1){
+  exp(-((x-mu)/sigma)^2)
+}
+```
+
+## 2. Data
+In this section is presented how to download, extract and summarize the bird's audio features, and be ommited in a first reading.
+
+### 2.1 Downloading
+The data may be downloaded by the [official Kaggle API]( https://github.com/Kaggle/kaggle-api). The zip file occupies around 5.3GB on disk. 
+
+```{r, eval=FALSE}
+url <- 'https://storage.googleapis.com/kaggle-competitions-data/kaggle-v2/44224/5188730/bundle/archive.zip?GoogleAccessId=web-data@kaggle-161607.iam.gserviceaccount.com&Expires=1685615147&Signature=QeSfA1%2Bumjv4ND27r%2F7ln3XzHk%2F52GDgNq3EDtphEAKxQUkypPQHaIVCxlLFAnhfqtTM3V4mny0KtttbCXgseNaweq%2Bx1f1TjtY6DEjP%2FksG%2B%2BX0TiaLgl06xPhh1SZ%2FiZcCaEtESL3SKAZ9Nq5%2FbSoNKTzghgPP2ET4ncUxc5UeaqR6%2BVTtSWLDCEe%2FEzPHOT64gaF9w4gAnqZjkl7GFthY034mXaBSULWl1Ul6K55vX%2FJfXbaxDzrJbVB1HlU0eax3MZcnyy9msHSwWEsH8N08pSYtWJZA4GmPoGUn5YrNRr5%2Bc7YYVKWKKPxmH%2FG7%2Fw7Y3gj7vd7etLLBzcjRBA%3D%3D&response-content-disposition=attachment%3B+filename%3Dbirdclef-2023.zip'
+options(timeout = 9999)
+download.file(url = url, '~/Downloads/birdclef-2023.zip', mode = 'wd')
+```
+
+### 2.2 Extracting
+Taking a look.
+```{r}
+head(unzip('~/Downloads/birdclef-2023.zip', list = TRUE))
+nrow(unzip('~/Downloads/birdclef-2023.zip', list = TRUE))
+```
+
+Unzipping.
+```{r, eval=FALSE}
+unzip('~/Downloads/birdclef-2023.zip',
+      exdir = tempdir(),
+      unzip = '/usr/bin/unzip')
+```
+
+### 2.3 Train data
+The .ogg files are converted using [`ffmpeg`](https://ffmpeg.org/), "[a] complete, cross-platform solution to record, convert and stream audio and video". The tagging procedure was performed by `voice::tag` using parallel processing. In order to save memory, the ogg to wav conversion, tagging and the wav files deletion are executed in the same routine. The processing took around 6 hours on a local machine with 12 CPUs, and the output is available in `birdclef2023::Esc`.
+
+```{r, eval=FALSE}
+# ogg files
+oggFiles <- list.files(paste0(tempdir(), '/train_audio'), 
+                       pattern = '.[Oo][Gg][Gg]$', 
+                       full.names = TRUE, recursive = TRUE)
+length(oggFiles)
+
+# ogg directories
+oggDirs <- unique(dirname(oggFiles))
+length(oggDirs)
+
+# wav files
+new_pth <- paste0(tempdir(), '/wav/')
+old_pth <- paste0(tempdir(), '/train_audio/')
+wavFiles <- sub(old_pth, new_pth, oggFiles)
+wavFiles <- sub('.ogg$', '.wav', wavFiles)
+
+# wav directories
+wavDirs <- unique(dirname(wavFiles))
+
+# extended dataset
+n <- length(oggDirs)
+E_list <- vector('list', n)
+names(E_list) <- basename(oggDirs)
+
+# converting ogg to wav, tagging grouping by wav_path, deleting wav
+ini <- Sys.time()
+
+for(i in 1:n){
+  # garbage collector
+  gc()
+  
+  # creating directories
+  dir.create((wavDirs[i]), recursive = TRUE)
+  
+  # filtering by species_code
+  oggTemp <- dir(oggDirs[i], full.names = TRUE)
+  fltr <- grep(basename(oggDirs[i]), wavFiles)
+  wavTemp <- wavFiles[fltr]
+  
+  # converting ogg to wav
+  for(j in 1:length(oggTemp)){
+    cmd <- paste0("ffmpeg -i ", oggTemp[j], " -ac 1 ", wavTemp[j])
+    system(cmd)
+  }
+  
+  # Extended dataset
+  E <- dplyr::tibble(species_code = basename(oggDirs[i]),
+                     wav_path = wavTemp)  
+  
+  # tagging
+  E_list[[i]] <- voice::tag(E, groupBy = 'species_code',
+                            features = c('f0', 'fmt', 'rf', 'rpf', 'rcf',
+                                         'mfcc', 'zcr', 'rms', 'gain', 'rfc'))
+  
+  # binding
+  E <- dplyr::bind_rows(E_list)
+  write.csv(E, row.names = FALSE,
+            file = gzfile(paste0(tempdir(), '/E_species_code.csv.gz')))
+  
+  # deleting wav files
+  unlink(wavDirs[i], recursive = TRUE)
+  
+  # progress
+  print(i/n)
+}
+Sys.time()-ini
+```
+
+### 2.4 Test data
+
+Converting the test file from ogg to wav format.
+```{r, eval=FALSE}
+# converting test data
+oggFile <- paste0(tempdir(), '/test_soundscapes/soundscape_29201.ogg')
+wavFile <- paste0(tempdir(), '/test_soundscapes/soundscape_29201.wav')
+cmd <- paste0("ffmpeg -y -i ", oggFile, " -ac 1 ", wavFile)
+system(cmd)
+```
+
+Splitting the 10 minutes file using `voice::splitw`. The procedure took around 25 seconds.
+```{r, eval=FALSE}
+# rttm
+n <- 10*60/5
+rttm <- dplyr::tibble(type = rep('SPEAKER', n),
+                      file = rep(NA, n),
+                      chnl = rep(1, n),
+                      tbeg = seq(0,595,5),
+                      tdur = rep(5,n),
+                      ortho = rep(NA, n),
+                      stype = rep(NA, n),
+                      name = rep('A',n),
+                      conf = rep(NA,n),
+                      slat = rep(NA,n))
+write.table(rttm, paste0(tempdir(), '/split5sec.rttm'),
+            quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+# splitting
+splitDir <- paste0(tempdir(), '/split')
+dir.create(splitDir)
+voice::splitw(wavFile, 
+              fromRttm = paste0(tempdir(), '/split5sec.rttm'),
+              toSplit = splitDir)
+
+# renaming
+fr <- dir(splitDir, full.names = TRUE)
+row_id_temp <- paste0('soundscape_29201_', seq(5,600,5), '.wav')
+to <- paste0(dirname(fr), '/', row_id_temp)
+file.rename(fr,to)
+```
+
+Finally the tagging is applied to the test data. The procedure took less than 1 minute to run, and the output is available in `birdclef2023::Ets`.
+
+```{r, eval=FALSE}
+# Extended dataset
+row_id_raw <- strsplit(row_id_temp, '.wav$')
+row_id_raw <- sapply(row_id_raw, geti, 1)
+E <- dplyr::tibble(row_id = row_id_raw,
+                   wav_path = to)
+
+# tagging grouping by row_id
+tst <- voice::tag(E, groupBy = 'row_id',
+                  features = c('f0', 'fmt', 'rf', 'rpf', 'rcf',
+                               'mfcc', 'zcr', 'rms', 'gain', 'rfc'),
+                  sortByGroupBy = FALSE,
+                  mc.cores = parallel::detectCores())
+
+# writing
+write.csv(E, row.names = FALSE,
+          file = gzfile(paste0(tempdir(), '/E_test_soundscapes.csv.gz')))
+```
+
+
+## 3. Modelling
+
+### 3.1 Objects
+The `birdclef2023::Esc` object contains 264 rows and 486 columns extracted via `voice::tag` from Kaggle BirdCLEF2023 `train_audio` directory.
+
+```{r}
+birdclef2023::Esc
+```
+
+The `birdclef2023::Ets` object contains 120 rows and 486 columns extracted via `voice::tag` from Kaggle BirdCLEF2023 `test_soundscapes` directory. Each row is associated with a 5 seconds section of `soundscape_29201.ogg` file.
+
+```{r}
+birdclef2023::Ets
+```
+
+### 3.2 Distances
+The basic idea is to compare each row from `Ets` (test sample) with each row from `Esc` (reference values). The comparison is made through a metric derived from the Euclidean distance, taking the average of the valid values (not NA). We call `Average Length` and it is given by
+\begin{equation}
+AL=\sqrt{\frac{\sum_{i=1}^{n-n_{NA}} (x_i-y_i)^2}{n-n_{NA}}}
+\end{equation} 
+
+
+```{r}
+# distances
+D <- matrix(NA, 
+            nrow = nrow(birdclef2023::Ets), 
+            ncol = nrow(birdclef2023::Esc))
+rownames(D) <- birdclef2023::Ets$row_id
+colnames(D) <- birdclef2023::Esc$species_code
+```
+
+The following code is completly not optimized, designed to be intuitive and run below the 2 hours limit defined in the Kaggle BirdCLEF2023 competition rules. Takes around 30 minutes to run on a local machine.
+
+```{r, eval=FALSE}
+# calculating distances
+k <- 0
+for(i in 1:nrow(birdclef2023::Ets)){
+  for(j in 1:nrow(birdclef2023::Esc)){
+    k <- k+1
+    d2 <- (birdclef2023::Ets[i,-1] - birdclef2023::Esc[j,-1])^2
+    n <- length(d2)
+    nNA <- sum(is.na(d2))
+    D[i,j] <- sqrt(sum(d2, na.rm = TRUE)/(n-nNA))
+    print(k/(nrow(birdclef2023::Ets)*nrow(birdclef2023::Esc)))
+  }
+}
+```
+
+```{r, eval=FALSE, echo=FALSE}
+# save to rda file
+save(D, file = './data/D.rda', compress = 'xz')
+```
+
+
+The probabilities are calculated considering the Gaussian function given by
+\begin{equation}
+g(x)=e^{-\left(\frac{x-\mu}{\sigma}\right)^2}
+\end{equation}
+$x$ represents the scaled distances, and the parameters used were $\mu=0$ and $\sigma=0.001$. The idea is to give more weight to distance values very close to zero, and quickly reduce the weight to distances that move away from zero, reason why the standard deviation is small (adjusted to 0.001).
+
+```{r}
+# probabilities matrix
+P <- matrix(NA, nrow = nrow(Ets), ncol = nrow(Esc))
+rownames(P) <- Ets$row_id
+colnames(P) <- Esc$species_code
+
+# calculating probabilities
+for(i in 1:nrow(P)){
+  nm <- gaussian(scale(D[i,]), mu = 0, sigma = 0.001)
+  P[i,] <- nm/sum(nm)
+}
+```
+
+After that, there is some cleaning and tidying up.
+
+```{r}
+block <- strsplit(rownames(P), '_')
+block <- as.numeric(sapply(block, geti, 3))
+submission <- tibble(block = block, row_id = rownames(P), as_tibble(P))
+
+submission <- submission %>% 
+  arrange(block) %>% 
+  select(-block)
+
+submission
+```
+
+Finally, the `submission.csv` file is written in the desired directory.
+
+```{r, eval=FALSE}
+write.csv(submission,
+          file = paste0(tempdir(), '/submission.csv'))
+```
