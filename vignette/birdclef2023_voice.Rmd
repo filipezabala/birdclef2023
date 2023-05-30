@@ -49,7 +49,7 @@ gaussian <- function(x, mu = 0, sigma = 1){
 ```
 
 ## 2. Data
-In this section is presented how to download, extract and summarize the bird's audio features. As the results are available at [`birdclef2023`](https://github.com/filipezabala/birdclef2023), it may be ommited in a first reading.
+In this section is presented how to download, extract and summarize the bird's audio features. As the results are available at [`birdclef2023`](https://github.com/filipezabala/birdclef2023), this section may be ommited in a first reading.
 
 ### 2.1 Downloading
 The data may be downloaded by the [official Kaggle API]( https://github.com/Kaggle/kaggle-api). The zip file occupies around 5.3GB on disk. 
@@ -75,7 +75,7 @@ unzip('~/Downloads/birdclef-2023.zip',
 ```
 
 ### 2.3 Train
-The .ogg files are converted using [`ffmpeg`](https://ffmpeg.org/), "[a] complete, cross-platform solution to record, convert and stream audio and video". The tagging procedure was performed by `voice::tag` using parallel processing. In order to save memory, the ogg to wav conversion, tagging and the wav files deletion are executed in the same routine. The processing took around 6 hours on a local machine with 12 CPUs, and the output is available in `birdclef2023::Esc`.
+The .ogg files are converted using [`ffmpeg`](https://ffmpeg.org/), "[a] complete, cross-platform solution to record, convert and stream audio and video". The tagging procedure was performed by `voice::tag` using parallel processing. In order to save memory, the ogg to wav conversion, tagging and the wav files deletion are executed in the same routine. The processing took around 6 hours on a local machine with 12 CPUs, and the output is available in `birdclef2023::E_train`.
 
 ```{r, eval=FALSE}
 # ogg files
@@ -133,7 +133,7 @@ for(i in 1:n){
   # binding
   E <- dplyr::bind_rows(E_list)
   write.csv(E, row.names = FALSE,
-            file = gzfile(paste0(tempdir(), '/E_species_code.csv.gz')))
+            file = gzfile(paste0(tempdir(), '/E_train.csv.gz')))
   
   # deleting wav files
   unlink(wavDirs[i], recursive = TRUE)
@@ -185,7 +185,7 @@ to <- paste0(dirname(fr), '/', row_id_temp)
 file.rename(fr,to)
 ```
 
-Finally the tagging is applied to the test data. The procedure took less than 1 minute to run, and the output is available in `birdclef2023::Ets`.
+Finally the tagging is applied to the test data. The procedure took less than 1 minute to run, and the output is available in `birdclef2023::E_test`.
 
 ```{r, eval=FALSE}
 # Extended dataset
@@ -203,52 +203,52 @@ tst <- voice::tag(E, groupBy = 'row_id',
 
 # writing
 write.csv(E, row.names = FALSE,
-          file = gzfile(paste0(tempdir(), '/E_test_soundscapes.csv.gz')))
+          file = gzfile(paste0(tempdir(), '/E_test.csv.gz')))
 ```
 
 
 ## 3. Modelling
 
 ### 3.1 Objects
-The `birdclef2023::Esc` object contains 264 rows and 486 columns extracted via `voice::tag` from Kaggle BirdCLEF2023 `train_audio` directory.
+The `birdclef2023::E_train` object contains 264 rows and 486 columns extracted via `voice::tag` from Kaggle BirdCLEF2023 `train_audio` directory.
 
 ```{r}
-birdclef2023::Esc
+birdclef2023::E_train
 ```
 
-The `birdclef2023::Ets` object contains 120 rows and 486 columns extracted via `voice::tag` from Kaggle BirdCLEF2023 `test_soundscapes` directory. Each row is associated with a 5 seconds section of `soundscape_29201.ogg` file.
+The `birdclef2023::E_test` object contains 120 rows and 486 columns extracted via `voice::tag` from Kaggle BirdCLEF2023 `test_soundscapes` directory. Each row is associated with a 5 seconds section of `soundscape_29201.ogg` file.
 
 ```{r}
-birdclef2023::Ets
+birdclef2023::E_test
 ```
 
 ### 3.2 Distances
-The basic idea is to compare each row from `Ets` (test sample) with each row from `Esc` (reference values). The comparison is made through a metric derived from the Euclidean distance, taking the average of the valid values (not NA). We call `Average Length` and it is given by
+The basic idea is to compare each row from `E_test` (test sample) with each row from `E_train` (reference values). The comparison is made through a metric derived from the Euclidean distance, taking the average of the valid values (not NA). We call `Average Length` and it is given by
 \begin{equation}
 AL=\sqrt{\frac{\sum_{i=1}^{n-n_{NA}} (x_i-y_i)^2}{n-n_{NA}}}
 \end{equation} 
 
 ```{r}
 # distances
-D <- matrix(NA, nrow = nrow(birdclef2023::Ets), 
-            ncol = nrow(birdclef2023::Esc))
-rownames(D) <- birdclef2023::Ets$row_id
-colnames(D) <- birdclef2023::Esc$species_code
+D <- matrix(NA, nrow = nrow(birdclef2023::E_test), 
+            ncol = nrow(birdclef2023::E_train))
+rownames(D) <- birdclef2023::E_test$row_id
+colnames(D) <- birdclef2023::E_train$species_code
 ```
 
-The following code is completly not optimized, designed to be intuitive and run below the 2 hours limit defined in the Kaggle BirdCLEF2023 competition rules. Takes around 30 minutes to run on a local machine, and the output is available in `birdclef2023::D`.
+The following code is completly not optimized, designed to be intuitive and run below the 2 hours limit defined in the [Kaggle BirdCLEF 2023](https://www.kaggle.com/competitions/birdclef-2023/) competition rules. Takes around 30 minutes to run on a local machine, and the output is available in `birdclef2023::D`.
 
 ```{r, eval=FALSE}
 # calculating distances
 k <- 0
-for(i in 1:nrow(birdclef2023::Ets)){
-  for(j in 1:nrow(birdclef2023::Esc)){
+for(i in 1:nrow(birdclef2023::E_train)){
+  for(j in 1:nrow(birdclef2023::E_test)){
     k <- k+1
-    d2 <- (birdclef2023::Ets[i,-1] - birdclef2023::Esc[j,-1])^2
+    d2 <- (birdclef2023::E_test[i,-1] - birdclef2023::E_train[j,-1])^2
     n <- length(d2)
     nNA <- sum(is.na(d2))
     D[i,j] <- sqrt(sum(d2, na.rm = TRUE)/(n-nNA))
-    print(k/(nrow(birdclef2023::Ets)*nrow(birdclef2023::Esc)))
+    print(k/(nrow(birdclef2023::E_test)*nrow(birdclef2023::E_train)))
   }
 }
 ```
@@ -266,16 +266,16 @@ $x$ represents the scaled distances, and the parameters used were $\mu=0$ and $\
 
 ```{r}
 # probabilities matrix
-P <- matrix(NA, nrow = nrow(birdclef2023::Ets), 
-            ncol = nrow(birdclef2023::Esc))
-rownames(P) <- birdclef2023::Ets$row_id
-colnames(P) <- birdclef2023::Esc$species_code
+P <- matrix(NA, nrow = nrow(birdclef2023::E_test), 
+            ncol = nrow(birdclef2023::E_train))
+rownames(P) <- birdclef2023::E_test$row_id
+colnames(P) <- birdclef2023::E_train$species_code
 
 # calculating probabilities
 for(i in 1:nrow(P)){
-  nm <- gaussian(scale(birdclef2023::D[i,]), 
-                 mu = 0, sigma = 0.001)
-  P[i,] <- nm/sum(nm)
+  w <- gaussian(scale(birdclef2023::D[i,]), 
+                mu = 0, sigma = 0.001)
+  P[i,] <- w/sum(w)
 }
 ```
 
